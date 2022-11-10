@@ -1,7 +1,4 @@
 <?php
-
-declare(strict_types=1);
-
 error_reporting(-1);
 date_default_timezone_set('UTC');
 $autoload = __DIR__ . '/../vendor/autoload.php';
@@ -14,6 +11,5 @@ if (!file_exists($autoload)) {
 }
 $loader = require $autoload;
 $loader->add('Test\\Prometheus', __DIR__);
-$loader->add('Test\\Performance', __DIR__);
 
-define('REDIS_HOST', isset($_ENV['REDIS_HOST']) ? $_ENV['REDIS_HOST'] : '127.0.0.1');
+define('REDIS_HOST', isset($_SERVER['REDIS_HOST']) ? $_SERVER['REDIS_HOST'] : '127.0.0.1');

@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 
 namespace Test\Prometheus\APC;
 
@@ -8,13 +7,14 @@ use Prometheus\Storage\APC;
 use Test\Prometheus\AbstractCollectorRegistryTest;
 
 /**
- * @requires extension apcu
+ * @requires extension apc
  */
 class CollectorRegistryTest extends AbstractCollectorRegistryTest
 {
-    public function configureAdapter(): void
+
+    public function configureAdapter()
     {
         $this->adapter = new APC();
-        $this->adapter->wipeStorage();
+        $this->adapter->flushAPC();
     }
 }

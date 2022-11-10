@@ -1,11 +1,9 @@
 <?php
-
-declare(strict_types=1);
-
 namespace Prometheus\Storage;
 
-use Prometheus\Exception\StorageException;
+use Prometheus\Collector;
 use Prometheus\MetricFamilySamples;
+use Prometheus\Sample;
 
 interface Adapter
 {
@@ -16,37 +14,11 @@ interface Adapter
     /**
      * @return MetricFamilySamples[]
      */
-    public function collect(): array;
+    public function collect();
 
-    /**
-     * @param mixed[] $data
-     * @return void
-     */
-    public function updateSummary(array $data): void;
+    public function updateHistogram(array $data);
 
-    /**
-     * @param mixed[] $data
-     * @return void
-     */
-    public function updateHistogram(array $data): void;
+    public function updateGauge(array $data);
 
-    /**
-     * @param mixed[] $data
-     * @return void
-     */
-    public function updateGauge(array $data): void;
-
-    /**
-     * @param mixed[] $data
-     * @return void
-     */
-    public function updateCounter(array $data): void;
-
-    /**
-     * Removes all previously stored metrics from underlying storage
-     *
-     * @throws StorageException
-     * @return void
-     */
-    public function wipeStorage(): void;
+    public function updateCounter(array $data);
 }

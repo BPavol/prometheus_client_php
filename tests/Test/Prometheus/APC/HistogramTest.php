@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 
 namespace Test\Prometheus\APC;
 
@@ -9,13 +8,14 @@ use Test\Prometheus\AbstractHistogramTest;
 
 /**
  * See https://prometheus.io/docs/instrumenting/exposition_formats/
- * @requires extension apcu
+ * @requires extension apc
  */
 class HistogramTest extends AbstractHistogramTest
 {
-    public function configureAdapter(): void
+    public function configureAdapter()
     {
         $this->adapter = new APC();
-        $this->adapter->wipeStorage();
+        $this->adapter->flushAPC();
     }
 }
+

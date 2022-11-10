@@ -1,11 +1,9 @@
 <?php
 
-declare(strict_types=1);
 
 namespace Test\Prometheus;
 
-use InvalidArgumentException;
-use PHPUnit\Framework\TestCase;
+use PHPUnit_Framework_TestCase;
 use Prometheus\Gauge;
 use Prometheus\MetricFamilySamples;
 use Prometheus\Sample;
@@ -14,151 +12,149 @@ use Prometheus\Storage\Adapter;
 /**
  * See https://prometheus.io/docs/instrumenting/exposition_formats/
  */
-abstract class AbstractGaugeTest extends TestCase
+abstract class AbstractGaugeTest extends PHPUnit_Framework_TestCase
 {
     /**
      * @var Adapter
      */
     public $adapter;
 
-    public function setUp(): void
+    public function setUp()
     {
         $this->configureAdapter();
     }
 
-    abstract public function configureAdapter(): void;
-
     /**
      * @test
      */
-    public function itShouldAllowSetWithLabels(): void
+    public function itShouldAllowSetWithLabels()
     {
-        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', ['foo', 'bar']);
-        $gauge->set(123, ['lalal', 'lululu']);
-        self::assertThat(
+        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', array('foo', 'bar'));
+        $gauge->set(123, array('lalal', 'lululu'));
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Gauge::TYPE,
-                            'labelNames' => ['foo', 'bar'],
-                            'samples' => [
-                                [
+                            'labelNames' => array('foo', 'bar'),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric',
-                                    'labelNames' => [],
-                                    'labelValues' => ['lalal', 'lululu'],
+                                    'labelNames' => array(),
+                                    'labelValues' => array('lalal', 'lululu'),
                                     'value' => 123,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
-        self::assertThat($gauge->getHelp(), self::equalTo('this is for testing'));
-        self::assertThat($gauge->getType(), self::equalTo(Gauge::TYPE));
+        $this->assertThat($gauge->getHelp(), $this->equalTo('this is for testing'));
+        $this->assertThat($gauge->getType(), $this->equalTo(Gauge::TYPE));
     }
 
     /**
      * @test
      */
-    public function itShouldAllowSetWithoutLabelWhenNoLabelsAreDefined(): void
+    public function itShouldAllowSetWithoutLabelWhenNoLabelsAreDefined()
     {
         $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing');
         $gauge->set(123);
-        self::assertThat(
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Gauge::TYPE,
-                            'labelNames' => [],
-                            'samples' => [
-                                [
+                            'labelNames' => array(),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric',
-                                    'labelNames' => [],
-                                    'labelValues' => [],
+                                    'labelNames' => array(),
+                                    'labelValues' => array(),
                                     'value' => 123,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
-        self::assertThat($gauge->getHelp(), self::equalTo('this is for testing'));
-        self::assertThat($gauge->getType(), self::equalTo(Gauge::TYPE));
+        $this->assertThat($gauge->getHelp(), $this->equalTo('this is for testing'));
+        $this->assertThat($gauge->getType(), $this->equalTo(Gauge::TYPE));
     }
 
     /**
      * @test
      */
-    public function itShouldAllowSetWithAFloatValue(): void
+    public function itShouldAllowSetWithAFloatValue()
     {
         $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing');
         $gauge->set(123.5);
-        self::assertThat(
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Gauge::TYPE,
-                            'labelNames' => [],
-                            'samples' => [
-                                [
+                            'labelNames' => array(),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric',
-                                    'labelNames' => [],
-                                    'labelValues' => [],
+                                    'labelNames' => array(),
+                                    'labelValues' => array(),
                                     'value' => 123.5,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
-        self::assertThat($gauge->getHelp(), self::equalTo('this is for testing'));
-        self::assertThat($gauge->getType(), self::equalTo(Gauge::TYPE));
+        $this->assertThat($gauge->getHelp(), $this->equalTo('this is for testing'));
+        $this->assertThat($gauge->getType(), $this->equalTo(Gauge::TYPE));
     }
 
     /**
      * @test
      */
-    public function itShouldIncrementAValue(): void
+    public function itShouldIncrementAValue()
     {
-        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', ['foo', 'bar']);
-        $gauge->inc(['lalal', 'lululu']);
-        $gauge->incBy(123, ['lalal', 'lululu']);
-        self::assertThat(
+        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', array('foo', 'bar'));
+        $gauge->inc(array('lalal', 'lululu'));
+        $gauge->incBy(123, array('lalal', 'lululu'));
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Gauge::TYPE,
-                            'labelNames' => ['foo', 'bar'],
-                            'samples' => [
-                                [
+                            'labelNames' => array('foo', 'bar'),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric',
-                                    'labelNames' => [],
-                                    'labelValues' => ['lalal', 'lululu'],
+                                    'labelNames' => array(),
+                                    'labelValues' => array('lalal', 'lululu'),
                                     'value' => 124,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
     }
@@ -166,32 +162,32 @@ abstract class AbstractGaugeTest extends TestCase
     /**
      * @test
      */
-    public function itShouldIncrementWithFloatValue(): void
+    public function itShouldIncrementWithFloatValue()
     {
-        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', ['foo', 'bar']);
-        $gauge->inc(['lalal', 'lululu']);
-        $gauge->incBy(123.5, ['lalal', 'lululu']);
-        self::assertThat(
+        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', array('foo', 'bar'));
+        $gauge->inc(array('lalal', 'lululu'));
+        $gauge->incBy(123.5, array('lalal', 'lululu'));
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Gauge::TYPE,
-                            'labelNames' => ['foo', 'bar'],
-                            'samples' => [
-                                [
+                            'labelNames' => array('foo', 'bar'),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric',
-                                    'labelNames' => [],
-                                    'labelValues' => ['lalal', 'lululu'],
+                                    'labelNames' => array(),
+                                    'labelValues' => array('lalal', 'lululu'),
                                     'value' => 124.5,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
     }
@@ -199,32 +195,32 @@ abstract class AbstractGaugeTest extends TestCase
     /**
      * @test
      */
-    public function itShouldDecrementAValue(): void
+    public function itShouldDecrementAValue()
     {
-        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', ['foo', 'bar']);
-        $gauge->dec(['lalal', 'lululu']);
-        $gauge->decBy(123, ['lalal', 'lululu']);
-        self::assertThat(
+        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', array('foo', 'bar'));
+        $gauge->dec(array('lalal', 'lululu'));
+        $gauge->decBy(123, array('lalal', 'lululu'));
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Gauge::TYPE,
-                            'labelNames' => ['foo', 'bar'],
-                            'samples' => [
-                                [
+                            'labelNames' => array('foo', 'bar'),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric',
-                                    'labelNames' => [],
-                                    'labelValues' => ['lalal', 'lululu'],
+                                    'labelNames' => array(),
+                                    'labelValues' => array('lalal', 'lululu'),
                                     'value' => -124,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
     }
@@ -232,32 +228,32 @@ abstract class AbstractGaugeTest extends TestCase
     /**
      * @test
      */
-    public function itShouldDecrementWithFloatValue(): void
+    public function itShouldDecrementWithFloatValue()
     {
-        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', ['foo', 'bar']);
-        $gauge->dec(['lalal', 'lululu']);
-        $gauge->decBy(123, ['lalal', 'lululu']);
-        self::assertThat(
+        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', array('foo', 'bar'));
+        $gauge->dec(array('lalal', 'lululu'));
+        $gauge->decBy(123, array('lalal', 'lululu'));
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Gauge::TYPE,
-                            'labelNames' => ['foo', 'bar'],
-                            'samples' => [
-                                [
+                            'labelNames' => array('foo', 'bar'),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric',
-                                    'labelNames' => [],
-                                    'labelValues' => ['lalal', 'lululu'],
+                                    'labelNames' => array(),
+                                    'labelValues' => array('lalal', 'lululu'),
                                     'value' => -124,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
     }
@@ -265,52 +261,52 @@ abstract class AbstractGaugeTest extends TestCase
     /**
      * @test
      */
-    public function itShouldOverwriteWhenSettingTwice(): void
+    public function itShouldOverwriteWhenSettingTwice()
     {
-        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', ['foo', 'bar']);
-        $gauge->set(123, ['lalal', 'lululu']);
-        $gauge->set(321, ['lalal', 'lululu']);
-        self::assertThat(
+        $gauge = new Gauge($this->adapter, 'test', 'some_metric', 'this is for testing', array('foo', 'bar'));
+        $gauge->set(123, array('lalal', 'lululu'));
+        $gauge->set(321, array('lalal', 'lululu'));
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Gauge::TYPE,
-                            'labelNames' => ['foo', 'bar'],
-                            'samples' => [
-                                [
+                            'labelNames' => array('foo', 'bar'),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric',
-                                    'labelNames' => [],
-                                    'labelValues' => ['lalal', 'lululu'],
+                                    'labelNames' => array(),
+                                    'labelValues' => array('lalal', 'lululu'),
                                     'value' => 321,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
     }
 
     /**
      * @test
+     * @expectedException \InvalidArgumentException
      */
-    public function itShouldRejectInvalidMetricsNames(): void
+    public function itShouldRejectInvalidMetricsNames()
     {
-        $this->expectException(InvalidArgumentException::class);
         new Gauge($this->adapter, 'test', 'some metric invalid metric', 'help');
     }
 
     /**
      * @test
+     * @expectedException \InvalidArgumentException
      */
-    public function itShouldRejectInvalidLabelNames(): void
+    public function itShouldRejectInvalidLabelNames()
     {
-        $this->expectException(InvalidArgumentException::class);
-        new Gauge($this->adapter, 'test', 'some_metric', 'help', ['invalid label']);
+        new Gauge($this->adapter, 'test', 'some_metric', 'help', array('invalid label'));
     }
 
     /**
@@ -319,18 +315,18 @@ abstract class AbstractGaugeTest extends TestCase
      *
      * @param mixed $value The label value
      */
-    public function isShouldAcceptAnySequenceOfBasicLatinCharactersForLabelValues($value): void
+    public function isShouldAcceptAnySequenceOfBasicLatinCharactersForLabelValues($value)
     {
         $label = 'foo';
-        $histogram = new Gauge($this->adapter, 'test', 'some_metric', 'help', [$label]);
-        $histogram->inc([$value]);
+        $histogram = new Gauge($this->adapter, 'test', 'some_metric', 'help', array($label));
+        $histogram->inc(array($value));
 
         $metrics = $this->adapter->collect();
+        self::assertInternalType('array', $metrics);
         self::assertCount(1, $metrics);
         self::assertContainsOnlyInstancesOf(MetricFamilySamples::class, $metrics);
 
         $metric = reset($metrics);
-        self::assertInstanceOf(MetricFamilySamples::class, $metric);
         $samples = $metric->getSamples();
         self::assertContainsOnlyInstancesOf(Sample::class, $samples);
 
@@ -344,17 +340,19 @@ abstract class AbstractGaugeTest extends TestCase
     }
 
     /**
-     * @return mixed[]
      * @see isShouldAcceptArbitraryLabelValues
+     * @return array
      */
-    public function labelValuesDataProvider(): array
+    public function labelValuesDataProvider()
     {
         $cases = [];
         // Basic Latin
         // See https://en.wikipedia.org/wiki/List_of_Unicode_characters#Basic_Latin
         for ($i = 32; $i <= 121; $i++) {
-            $cases['ASCII code ' . $i] = [chr($i)];
+            $cases['ASCII code ' . $i] = array(chr($i));
         }
         return $cases;
     }
+
+    public abstract function configureAdapter();
 }

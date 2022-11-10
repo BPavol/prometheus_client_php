@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 
 namespace Test\Prometheus\InMemory;
 
@@ -9,9 +8,9 @@ use Test\Prometheus\AbstractCollectorRegistryTest;
 
 class CollectorRegistryTest extends AbstractCollectorRegistryTest
 {
-    public function configureAdapter(): void
+    public function configureAdapter()
     {
         $this->adapter = new InMemory();
-        $this->adapter->wipeStorage();
+        $this->adapter->flushMemory();
     }
 }

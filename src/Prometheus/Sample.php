@@ -1,80 +1,60 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Prometheus;
+
 
 class Sample
 {
-    /**
-     * @var string
-     */
     private $name;
-
-    /**
-     * @var string[]
-     */
     private $labelNames;
-
-    /**
-     * @var mixed[]
-     */
     private $labelValues;
-
-    /**
-     * @var int|double
-     */
     private $value;
 
-    /**
-     * Sample constructor.
-     * @param mixed[] $data
-     */
     public function __construct(array $data)
     {
         $this->name = $data['name'];
-        $this->labelNames = (array) $data['labelNames'];
-        $this->labelValues = (array) $data['labelValues'];
+        $this->labelNames = $data['labelNames'];
+        $this->labelValues = $data['labelValues'];
         $this->value = $data['value'];
     }
 
     /**
      * @return string
      */
-    public function getName(): string
+    public function getName()
     {
         return $this->name;
     }
 
     /**
-     * @return string[]
+     * @return array
      */
-    public function getLabelNames(): array
+    public function getLabelNames()
     {
-        return $this->labelNames;
+        return (array)$this->labelNames;
     }
 
     /**
-     * @return mixed[]
+     * @return array
      */
-    public function getLabelValues(): array
+    public function getLabelValues()
     {
-        return $this->labelValues;
+        return (array)$this->labelValues;
     }
 
     /**
-     * @return string
+     * @return int|double
      */
-    public function getValue(): string
+    public function getValue()
     {
-        return (string) $this->value;
+        return $this->value;
     }
 
     /**
      * @return bool
      */
-    public function hasLabelNames(): bool
+    public function hasLabelNames()
     {
-        return $this->labelNames !== [];
+        return !empty($this->labelNames);
     }
 }

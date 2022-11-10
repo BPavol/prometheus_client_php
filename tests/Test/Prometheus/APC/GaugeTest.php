@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 
 namespace Test\Prometheus\APC;
 
@@ -9,13 +8,13 @@ use Test\Prometheus\AbstractGaugeTest;
 
 /**
  * See https://prometheus.io/docs/instrumenting/exposition_formats/
- * @requires extension apcu
+ * @requires extension apc
  */
 class GaugeTest extends AbstractGaugeTest
 {
-    public function configureAdapter(): void
+    public function configureAdapter()
     {
         $this->adapter = new APC();
-        $this->adapter->wipeStorage();
+        $this->adapter->flushAPC();
     }
 }

@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 
 namespace Test\Prometheus\Redis;
 
@@ -13,9 +12,9 @@ use Test\Prometheus\AbstractCounterTest;
  */
 class CounterTest extends AbstractCounterTest
 {
-    public function configureAdapter(): void
+    public function configureAdapter()
     {
-        $this->adapter = new Redis(['host' => REDIS_HOST]);
-        $this->adapter->wipeStorage();
+        $this->adapter = new Redis(array('host' => REDIS_HOST));
+        $this->adapter->flushRedis();
     }
 }

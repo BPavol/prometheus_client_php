@@ -1,70 +1,37 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Prometheus\Storage;
 
-use Prometheus\Math;
+
 use Prometheus\MetricFamilySamples;
 use RuntimeException;
 
 class InMemory implements Adapter
 {
-    /**
-     * @var mixed[]
-     */
-    protected $counters = [];
 
-    /**
-     * @var mixed[]
-     */
-    protected $gauges = [];
-
-    /**
-     * @var mixed[]
-     */
-    protected $histograms = [];
-
-    /**
-     * @var mixed[]
-     */
-    protected $summaries = [];
+    private $counters = [];
+    private $gauges = [];
+    private $histograms = [];
 
     /**
      * @return MetricFamilySamples[]
      */
-    public function collect(): array
+    public function collect()
     {
         $metrics = $this->internalCollect($this->counters);
         $metrics = array_merge($metrics, $this->internalCollect($this->gauges));
         $metrics = array_merge($metrics, $this->collectHistograms());
-        $metrics = array_merge($metrics, $this->collectSummaries());
         return $metrics;
     }
 
-    /**
-     * @deprecated use replacement method wipeStorage from Adapter interface
-     */
-    public function flushMemory(): void
-    {
-        $this->wipeStorage();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function wipeStorage(): void
+    public function flushMemory()
     {
         $this->counters = [];
         $this->gauges = [];
         $this->histograms = [];
-        $this->summaries = [];
     }
 
-    /**
-     * @return MetricFamilySamples[]
-     */
-    protected function collectHistograms(): array
+    private function collectHistograms()
     {
         $histograms = [];
         foreach ($this->histograms as $histogram) {
@@ -74,7 +41,7 @@ class InMemory implements Adapter
                 'help' => $metaData['help'],
                 'type' => $metaData['type'],
                 'labelNames' => $metaData['labelNames'],
-                'buckets' => $metaData['buckets'],
+                'buckets' => $metaData['buckets']
             ];
 
             // Add the Inf bucket so we can compute it later on
@@ -102,7 +69,7 @@ class InMemory implements Adapter
                             'name' => $metaData['name'] . '_bucket',
                             'labelNames' => ['le'],
                             'labelValues' => array_merge($decodedLabelValues, [$bucket]),
-                            'value' => $acc,
+                            'value' => $acc
                         ];
                     } else {
                         $acc += $histogramBuckets[$labelValues][$bucket];
@@ -110,7 +77,7 @@ class InMemory implements Adapter
                             'name' => $metaData['name'] . '_' . 'bucket',
                             'labelNames' => ['le'],
                             'labelValues' => array_merge($decodedLabelValues, [$bucket]),
-                            'value' => $acc,
+                            'value' => $acc
                         ];
                     }
                 }
@@ -120,7 +87,7 @@ class InMemory implements Adapter
                     'name' => $metaData['name'] . '_count',
                     'labelNames' => [],
                     'labelValues' => $decodedLabelValues,
-                    'value' => $acc,
+                    'value' => $acc
                 ];
 
                 // Add the sum
@@ -128,94 +95,16 @@ class InMemory implements Adapter
                     'name' => $metaData['name'] . '_sum',
                     'labelNames' => [],
                     'labelValues' => $decodedLabelValues,
-                    'value' => $histogramBuckets[$labelValues]['sum'],
+                    'value' => $histogramBuckets[$labelValues]['sum']
                 ];
+
             }
             $histograms[] = new MetricFamilySamples($data);
         }
         return $histograms;
     }
 
-    /**
-     * @return MetricFamilySamples[]
-     */
-    protected function collectSummaries(): array
-    {
-        $math = new Math();
-        $summaries = [];
-        foreach ($this->summaries as $metaKey => &$summary) {
-            $metaData = $summary['meta'];
-            $data = [
-                'name' => $metaData['name'],
-                'help' => $metaData['help'],
-                'type' => $metaData['type'],
-                'labelNames' => $metaData['labelNames'],
-                'maxAgeSeconds' => $metaData['maxAgeSeconds'],
-                'quantiles' => $metaData['quantiles'],
-                'samples' => [],
-            ];
-
-            foreach ($summary['samples'] as $key => &$values) {
-                $parts = explode(':', $key);
-                $labelValues = $parts[2];
-                $decodedLabelValues = $this->decodeLabelValues($labelValues);
-
-                // Remove old data
-                $values = array_filter($values, function (array $value) use ($data): bool {
-                    return time() - $value['time'] <= $data['maxAgeSeconds'];
-                });
-                if (count($values) === 0) {
-                    unset($summary['samples'][$key]);
-                    continue;
-                }
-
-                // Compute quantiles
-                usort($values, function (array $value1, array $value2) {
-                    if ($value1['value'] === $value2['value']) {
-                        return 0;
-                    }
-                    return ($value1['value'] < $value2['value']) ? -1 : 1;
-                });
-
-                foreach ($data['quantiles'] as $quantile) {
-                    $data['samples'][] = [
-                        'name' => $metaData['name'],
-                        'labelNames' => ['quantile'],
-                        'labelValues' => array_merge($decodedLabelValues, [$quantile]),
-                        'value' => $math->quantile(array_column($values, 'value'), $quantile),
-                    ];
-                }
-
-                // Add the count
-                $data['samples'][] = [
-                    'name' => $metaData['name'] . '_count',
-                    'labelNames' => [],
-                    'labelValues' => $decodedLabelValues,
-                    'value' => count($values),
-                ];
-
-                // Add the sum
-                $data['samples'][] = [
-                    'name' => $metaData['name'] . '_sum',
-                    'labelNames' => [],
-                    'labelValues' => $decodedLabelValues,
-                    'value' => array_sum(array_column($values, 'value')),
-                ];
-            }
-            if (count($data['samples']) > 0) {
-                $summaries[] = new MetricFamilySamples($data);
-            } else {
-                unset($this->summaries[$metaKey]);
-            }
-        }
-        return $summaries;
-    }
-
-    /**
-     * @param mixed[] $metrics
-     * @return MetricFamilySamples[]
-     */
-    protected function internalCollect(array $metrics): array
+    private function internalCollect(array $metrics)
     {
         $result = [];
         foreach ($metrics as $metric) {
@@ -225,7 +114,6 @@ class InMemory implements Adapter
                 'help' => $metaData['help'],
                 'type' => $metaData['type'],
                 'labelNames' => $metaData['labelNames'],
-                'samples' => [],
             ];
             foreach ($metric['samples'] as $key => $value) {
                 $parts = explode(':', $key);
@@ -234,7 +122,7 @@ class InMemory implements Adapter
                     'name' => $metaData['name'],
                     'labelNames' => [],
                     'labelValues' => $this->decodeLabelValues($labelValues),
-                    'value' => $value,
+                    'value' => $value
                 ];
             }
             $this->sortSamples($data['samples']);
@@ -243,18 +131,14 @@ class InMemory implements Adapter
         return $result;
     }
 
-    /**
-     * @param mixed[] $data
-     * @return void
-     */
-    public function updateHistogram(array $data): void
+    public function updateHistogram(array $data)
     {
         // Initialize the sum
         $metaKey = $this->metaKey($data);
         if (array_key_exists($metaKey, $this->histograms) === false) {
             $this->histograms[$metaKey] = [
                 'meta' => $this->metaData($data),
-                'samples' => [],
+                'samples' => []
             ];
         }
         $sumKey = $this->histogramBucketValueKey($data, 'sum');
@@ -280,42 +164,14 @@ class InMemory implements Adapter
         $this->histograms[$metaKey]['samples'][$bucketKey] += 1;
     }
 
-    /**
-     * @param mixed[] $data
-     * @return void
-     */
-    public function updateSummary(array $data): void
-    {
-        $metaKey = $this->metaKey($data);
-        if (array_key_exists($metaKey, $this->summaries) === false) {
-            $this->summaries[$metaKey] = [
-                'meta' => $this->metaData($data),
-                'samples' => [],
-            ];
-        }
-
-        $valueKey = $this->valueKey($data);
-        if (array_key_exists($valueKey, $this->summaries[$metaKey]['samples']) === false) {
-            $this->summaries[$metaKey]['samples'][$valueKey] = [];
-        }
-
-        $this->summaries[$metaKey]['samples'][$valueKey][] = [
-            'time' => time(),
-            'value' => $data['value'],
-        ];
-    }
-
-    /**
-     * @param mixed[] $data
-     */
-    public function updateGauge(array $data): void
+    public function updateGauge(array $data)
     {
         $metaKey = $this->metaKey($data);
         $valueKey = $this->valueKey($data);
         if (array_key_exists($metaKey, $this->gauges) === false) {
             $this->gauges[$metaKey] = [
                 'meta' => $this->metaData($data),
-                'samples' => [],
+                'samples' => []
             ];
         }
         if (array_key_exists($valueKey, $this->gauges[$metaKey]['samples']) === false) {
@@ -328,17 +184,14 @@ class InMemory implements Adapter
         }
     }
 
-    /**
-     * @param mixed[] $data
-     */
-    public function updateCounter(array $data): void
+    public function updateCounter(array $data)
     {
         $metaKey = $this->metaKey($data);
         $valueKey = $this->valueKey($data);
         if (array_key_exists($metaKey, $this->counters) === false) {
             $this->counters[$metaKey] = [
                 'meta' => $this->metaData($data),
-                'samples' => [],
+                'samples' => []
             ];
         }
         if (array_key_exists($valueKey, $this->counters[$metaKey]['samples']) === false) {
@@ -352,78 +205,70 @@ class InMemory implements Adapter
     }
 
     /**
-     * @param mixed[]    $data
-     * @param string|int $bucket
+     * @param array $data
+     *
+     * @param       $bucket
      *
      * @return string
      */
-    protected function histogramBucketValueKey(array $data, $bucket): string
+    private function histogramBucketValueKey(array $data, $bucket)
     {
         return implode(':', [
             $data['type'],
             $data['name'],
             $this->encodeLabelValues($data['labelValues']),
-            $bucket,
+            $bucket
         ]);
     }
 
     /**
-     * @param mixed[] $data
+     * @param array $data
      *
      * @return string
      */
-    protected function metaKey(array $data): string
+    private function metaKey(array $data)
     {
-        return implode(':', [
-            $data['type'],
-            $data['name'],
-            'meta'
-        ]);
+        return implode(':', [$data['type'], $data['name'], 'meta']);
     }
 
     /**
-     * @param mixed[] $data
+     * @param array $data
      *
      * @return string
      */
-    protected function valueKey(array $data): string
+    private function valueKey(array $data)
     {
-        return implode(':', [
-            $data['type'],
-            $data['name'],
-            $this->encodeLabelValues($data['labelValues']),
-            'value'
-        ]);
+        return implode(':',
+            [$data['type'], $data['name'], $this->encodeLabelValues($data['labelValues']), 'value']);
     }
 
     /**
-     * @param mixed[] $data
+     * @param array $data
      *
-     * @return mixed[]
+     * @return array
      */
-    protected function metaData(array $data): array
+    private function metaData(array $data)
     {
         $metricsMetaData = $data;
-        unset($metricsMetaData['value'], $metricsMetaData['command'], $metricsMetaData['labelValues']);
+        unset($metricsMetaData['value']);
+        unset($metricsMetaData['command']);
+        unset($metricsMetaData['labelValues']);
         return $metricsMetaData;
     }
 
-    /**
-     * @param mixed[] $samples
-     */
-    protected function sortSamples(array &$samples): void
+    private function sortSamples(array &$samples)
     {
-        usort($samples, function ($a, $b): int {
+        usort($samples, function ($a, $b) {
             return strcmp(implode("", $a['labelValues']), implode("", $b['labelValues']));
         });
     }
 
     /**
-     * @param mixed[] $values
+     * @param array $values
      * @return string
      * @throws RuntimeException
      */
-    protected function encodeLabelValues(array $values): string
+    private function encodeLabelValues(array $values)
     {
         $json = json_encode($values);
         if (false === $json) {
@@ -434,10 +279,10 @@ class InMemory implements Adapter
 
     /**
      * @param string $values
-     * @return mixed[]
+     * @return array
      * @throws RuntimeException
      */
-    protected function decodeLabelValues(string $values): array
+    private function decodeLabelValues($values)
     {
         $json = base64_decode($values, true);
         if (false === $json) {

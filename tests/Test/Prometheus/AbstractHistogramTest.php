@@ -1,118 +1,96 @@
 <?php
 
-declare(strict_types=1);
 
 namespace Test\Prometheus;
 
-use InvalidArgumentException;
-use PHPUnit\Framework\TestCase;
+use PHPUnit_Framework_TestCase;
 use Prometheus\Histogram;
 use Prometheus\MetricFamilySamples;
 use Prometheus\Sample;
 use Prometheus\Storage\Adapter;
 
+
 /**
  * See https://prometheus.io/docs/instrumenting/exposition_formats/
  */
-abstract class AbstractHistogramTest extends TestCase
+abstract class AbstractHistogramTest extends PHPUnit_Framework_TestCase
 {
     /**
      * @var Adapter
      */
     public $adapter;
 
-
-    /**
-     * @var string
-     */
-    private $savedPrecision;
-
-    private const HIGH_PRECISION = "17";
-
-    public function setUp(): void
+    public function setUp()
     {
         $this->configureAdapter();
-        $savedPrecision = ini_get('serialize_precision');
-        if (!is_string($savedPrecision)) {
-            $savedPrecision = '-1';
-        }
-        $this->savedPrecision = $savedPrecision;
-        ini_set('serialize_precision', self::HIGH_PRECISION);
     }
-
-    public function tearDown(): void
-    {
-        ini_set('serialize_precision', $this->savedPrecision);
-    }
-
-    abstract public function configureAdapter(): void;
 
     /**
      * @test
      */
-    public function itShouldObserveWithLabels(): void
+    public function itShouldObserveWithLabels()
     {
         $histogram = new Histogram(
             $this->adapter,
             'test',
             'some_metric',
             'this is for testing',
-            ['foo', 'bar'],
-            [100, 200, 300]
+            array('foo', 'bar'),
+            array(100, 200, 300)
         );
-        $histogram->observe(123, ['lalal', 'lululu']);
-        $histogram->observe(245, ['lalal', 'lululu']);
-        self::assertThat(
+        $histogram->observe(123, array('lalal', 'lululu'));
+        $histogram->observe(245, array('lalal', 'lululu'));
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Histogram::TYPE,
-                            'labelNames' => ['foo', 'bar'],
-                            'samples' => [
-                                [
+                            'labelNames' => array('foo', 'bar'),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => ['lalal', 'lululu', 100],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array('lalal', 'lululu', 100),
                                     'value' => 0,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => ['lalal', 'lululu', 200],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array('lalal', 'lululu', 200),
                                     'value' => 1,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => ['lalal', 'lululu', 300],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array('lalal', 'lululu', 300),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => ['lalal', 'lululu', '+Inf'],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array('lalal', 'lululu', '+Inf'),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_count',
-                                    'labelNames' => [],
-                                    'labelValues' => ['lalal', 'lululu'],
+                                    'labelNames' => array(),
+                                    'labelValues' => array('lalal', 'lululu'),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_sum',
-                                    'labelNames' => [],
-                                    'labelValues' => ['lalal', 'lululu'],
+                                    'labelNames' => array(),
+                                    'labelValues' => array('lalal', 'lululu'),
                                     'value' => 368,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
     }
@@ -120,68 +98,68 @@ abstract class AbstractHistogramTest extends TestCase
     /**
      * @test
      */
-    public function itShouldObserveWithoutLabelWhenNoLabelsAreDefined(): void
+    public function itShouldObserveWithoutLabelWhenNoLabelsAreDefined()
     {
         $histogram = new Histogram(
             $this->adapter,
             'test',
             'some_metric',
             'this is for testing',
-            [],
-            [100, 200, 300]
+            array(),
+            array(100, 200, 300)
         );
         $histogram->observe(245);
-        self::assertThat(
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Histogram::TYPE,
-                            'labelNames' => [],
-                            'samples' => [
-                                [
+                            'labelNames' => array(),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [100],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(100),
                                     'value' => 0,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [200],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(200),
                                     'value' => 0,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [300],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(300),
                                     'value' => 1,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => ['+Inf'],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array('+Inf'),
                                     'value' => 1,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_count',
-                                    'labelNames' => [],
-                                    'labelValues' => [],
+                                    'labelNames' => array(),
+                                    'labelValues' => array(),
                                     'value' => 1,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_sum',
-                                    'labelNames' => [],
-                                    'labelValues' => [],
+                                    'labelNames' => array(),
+                                    'labelValues' => array(),
                                     'value' => 245,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
     }
@@ -189,69 +167,69 @@ abstract class AbstractHistogramTest extends TestCase
     /**
      * @test
      */
-    public function itShouldObserveValuesOfTypeDouble(): void
+    public function itShouldObserveValuesOfTypeDouble()
     {
         $histogram = new Histogram(
             $this->adapter,
             'test',
             'some_metric',
             'this is for testing',
-            [],
-            [0.1, 0.2, 0.3]
+            array(),
+            array(0.1, 0.2, 0.3)
         );
         $histogram->observe(0.11);
         $histogram->observe(0.3);
-        self::assertThat(
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Histogram::TYPE,
-                            'labelNames' => [],
-                            'samples' => [
-                                [
+                            'labelNames' => array(),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.1],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.1),
                                     'value' => 0,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.2],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.2),
                                     'value' => 1,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.3],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.3),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => ['+Inf'],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array('+Inf'),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_count',
-                                    'labelNames' => [],
-                                    'labelValues' => [],
+                                    'labelNames' => array(),
+                                    'labelValues' => array(),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_sum',
-                                    'labelNames' => [],
-                                    'labelValues' => [],
+                                    'labelNames' => array(),
+                                    'labelValues' => array(),
                                     'value' => 0.41,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
     }
@@ -259,28 +237,7 @@ abstract class AbstractHistogramTest extends TestCase
     /**
      * @test
      */
-    public function itShouldObserveValuesOfTypeDoubleWithUnusualPrecision(): void
-    {
-        $histogram = new Histogram(
-            $this->adapter,
-            'test',
-            'some_metric',
-            'this is for testing',
-            [],
-            [1.0]
-        );
-        ini_set("serialize_precision", "17");
-        $histogram->observe(1.1 * 2 ** 53);
-        self::assertThat(
-            $this->adapter->collect(),
-            self::logicalNot(self::isEmpty())
-        );
-    }
-
-    /**
-     * @test
-     */
-    public function itShouldProvideDefaultBuckets(): void
+    public function itShouldProvideDefaultBuckets()
     {
         // .005, .01, .025, .05, .075, .1, .25, .5, .75, 1.0, 2.5, 5.0, 7.5, 10.0
 
@@ -289,179 +246,180 @@ abstract class AbstractHistogramTest extends TestCase
             'test',
             'some_metric',
             'this is for testing',
-            []
+            array()
+
         );
         $histogram->observe(0.11);
         $histogram->observe(0.03);
-        self::assertThat(
+        $this->assertThat(
             $this->adapter->collect(),
-            self::equalTo(
-                [
+            $this->equalTo(
+                array(
                     new MetricFamilySamples(
-                        [
+                        array(
                             'name' => 'test_some_metric',
                             'help' => 'this is for testing',
                             'type' => Histogram::TYPE,
-                            'labelNames' => [],
-                            'samples' => [
-                                [
+                            'labelNames' => array(),
+                            'samples' => array(
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.005],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.005),
                                     'value' => 0,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.01],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.01),
                                     'value' => 0,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.025],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.025),
                                     'value' => 0,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.05],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.05),
                                     'value' => 1,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.075],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.075),
                                     'value' => 1,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.1],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.1),
                                     'value' => 1,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.25],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.25),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.5],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.5),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [0.75],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(0.75),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [1.0],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(1.0),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [2.5],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(2.5),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [5],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(5),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [7.5],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(7.5),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => [10],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array(10),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_bucket',
-                                    'labelNames' => ['le'],
-                                    'labelValues' => ['+Inf'],
+                                    'labelNames' => array('le'),
+                                    'labelValues' => array('+Inf'),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_count',
-                                    'labelNames' => [],
-                                    'labelValues' => [],
+                                    'labelNames' => array(),
+                                    'labelValues' => array(),
                                     'value' => 2,
-                                ],
-                                [
+                                ),
+                                array(
                                     'name' => 'test_some_metric_sum',
-                                    'labelNames' => [],
-                                    'labelValues' => [],
+                                    'labelNames' => array(),
+                                    'labelValues' => array(),
                                     'value' => 0.14,
-                                ],
-                            ],
-                        ]
-                    ),
-                ]
+                                )
+                            )
+                        )
+                    )
+                )
             )
         );
     }
 
     /**
      * @test
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Histogram buckets must be in increasing order
      */
-    public function itShouldThrowAnExceptionWhenTheBucketSizesAreNotIncreasing(): void
+    public function itShouldThrowAnExceptionWhenTheBucketSizesAreNotIncreasing()
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Histogram buckets must be in increasing order');
-        new Histogram($this->adapter, 'test', 'some_metric', 'this is for testing', [], [1, 1]);
+        new Histogram($this->adapter, 'test', 'some_metric', 'this is for testing', array(), array(1, 1));
     }
 
     /**
      * @test
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Histogram must have at least one bucket
      */
-    public function itShouldThrowAnExceptionWhenThereIsLessThanOneBucket(): void
+    public function itShouldThrowAnExceptionWhenThereIsLessThanOneBucket()
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Histogram must have at least one bucket');
-        new Histogram($this->adapter, 'test', 'some_metric', 'this is for testing', [], []);
+        new Histogram($this->adapter, 'test', 'some_metric', 'this is for testing', array(), array());
     }
 
     /**
      * @test
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Histogram cannot have a label named
      */
-    public function itShouldThrowAnExceptionWhenThereIsALabelNamedLe(): void
+    public function itShouldThrowAnExceptionWhenThereIsALabelNamedLe()
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Histogram cannot have a label named');
-        new Histogram($this->adapter, 'test', 'some_metric', 'this is for testing', ['le'], [1]);
+        new Histogram($this->adapter, 'test', 'some_metric', 'this is for testing', array('le'), array(1));
     }
 
     /**
      * @test
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Invalid metric name
      */
-    public function itShouldRejectInvalidMetricsNames(): void
+    public function itShouldRejectInvalidMetricsNames()
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid metric name');
-        new Histogram($this->adapter, 'test', 'some invalid metric', 'help', [], [1]);
+        new Histogram($this->adapter, 'test', 'some invalid metric', 'help', array(), array(1));
     }
 
     /**
      * @test
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Invalid label name
      */
-    public function itShouldRejectInvalidLabelNames(): void
+    public function itShouldRejectInvalidLabelNames()
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid label name');
-        new Histogram($this->adapter, 'test', 'some_metric', 'help', ['invalid label'], [1]);
+        new Histogram($this->adapter, 'test', 'some_metric', 'help', array('invalid label'), array(1));
     }
 
     /**
@@ -470,18 +428,18 @@ abstract class AbstractHistogramTest extends TestCase
      *
      * @param mixed $value The label value
      */
-    public function isShouldAcceptAnySequenceOfBasicLatinCharactersForLabelValues($value): void
+    public function isShouldAcceptAnySequenceOfBasicLatinCharactersForLabelValues($value)
     {
         $label = 'foo';
-        $histogram = new Histogram($this->adapter, 'test', 'some_metric', 'help', [$label], [1]);
-        $histogram->observe(1, [$value]);
+        $histogram = new Histogram($this->adapter, 'test', 'some_metric', 'help', array($label), array(1));
+        $histogram->observe(1, array($value));
 
         $metrics = $this->adapter->collect();
+        self::assertInternalType('array', $metrics);
         self::assertCount(1, $metrics);
         self::assertContainsOnlyInstancesOf(MetricFamilySamples::class, $metrics);
 
         $metric = reset($metrics);
-        self::assertInstanceOf(MetricFamilySamples::class, $metric);
         $samples = $metric->getSamples();
         self::assertContainsOnlyInstancesOf(Sample::class, $samples);
 
@@ -495,48 +453,19 @@ abstract class AbstractHistogramTest extends TestCase
     }
 
     /**
-     * @test
-     */
-    public function itShouldBeAbleToGenerateExponentialBucketsGivenSpecificBounds(): void
-    {
-        $start = 0.05;
-        $growthFactor = 1.5;
-        $numberOfbuckets = 14;
-
-        $generatedBuckets = Histogram::exponentialBuckets($start, $growthFactor, $numberOfbuckets);
-
-        $expectedBuckets = [
-            0.05,
-            0.075,
-            0.1125,
-            0.16875,
-            0.253125,
-            0.3796875,
-            0.56953125,
-            0.854296875,
-            1.2814453125,
-            1.92216796875,
-            2.883251953125,
-            4.3248779296875,
-            6.4873168945313,
-            9.7309753417969,
-        ];
-
-        self::assertEquals($generatedBuckets, $expectedBuckets);
-    }
-
-    /**
-     * @return mixed[]
      * @see isShouldAcceptArbitraryLabelValues
+     * @return array
      */
-    public function labelValuesDataProvider(): array
+    public function labelValuesDataProvider()
     {
         $cases = [];
         // Basic Latin
         // See https://en.wikipedia.org/wiki/List_of_Unicode_characters#Basic_Latin
         for ($i = 32; $i <= 121; $i++) {
-            $cases['ASCII code ' . $i] = [chr($i)];
+            $cases['ASCII code ' . $i] = array(chr($i));
         }
         return $cases;
     }
+
+    public abstract function configureAdapter();
 }

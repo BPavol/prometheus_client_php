@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 
 namespace Test\Prometheus\InMemory;
 
@@ -12,9 +11,10 @@ use Test\Prometheus\AbstractCounterTest;
  */
 class CounterTest extends AbstractCounterTest
 {
-    public function configureAdapter(): void
+
+    public function configureAdapter()
     {
         $this->adapter = new InMemory();
-        $this->adapter->wipeStorage();
+        $this->adapter->flushMemory();
     }
 }
